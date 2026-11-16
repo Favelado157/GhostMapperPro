@@ -29,7 +29,19 @@ class MapperService : AccessibilityService() {
   return true
  }
  private fun load() { mappings.clear(); val prefs=getSharedPreferences("maps",MODE_PRIVATE); val data=JSONObject(prefs.getString("keys","{}") ?: "{}"); for (key in data.keys()) { val point=data.getJSONArray(key); mappings[key.toInt()]=Pair(point.getDouble(0).toFloat(),point.getDouble(1).toFloat()) } }
- private fun save() { val data=JSONObject(); mappings.forEach { (key,point)-> data.put(key,org.json.JSONArray().put(point.first).put(point.second)) }; getSharedPreferences("maps",MODE_PRIVATE).edit().putString("keys",data.toString()).apply() }
+ private fun save() {
+    val data = JSONObject()
+    mappings.forEach { (key, point) ->
+        val coordinates = org.json.JSONArray()
+            .put(point.first.toDouble())
+            .put(point.second.toDouble())
+        data.put(key.toString(), coordinates)
+    }
+    getSharedPreferences("maps", MODE_PRIVATE)
+        .edit()
+        .putString("keys", data.toString())
+        .apply()
+}
  fun showEditor() {
   if (overlay!=null) return
   val box=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(20,20,20,20); setBackgroundColor(Color.rgb(13,36,58)) }
@@ -43,9 +55,10 @@ class MapperService : AccessibilityService() {
    else { mappings[code]=Pair(px/100f,py/100f); save(); Toast.makeText(this@MapperService,"Mapeamento salvo",Toast.LENGTH_SHORT).show() }
   } })
   box.addView(Button(this).apply { text="FECHAR EDITOR"; setOnClickListener { hideEditor() } })
-  val params=WindowManager.LayoutParams(620,WindowManager.LayoutParams.WRAP_CONTENT,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT).apply { gravity=Gravity.TOP or Gravity.CENTER_HORIZONTAL; y=100 }
-  // The editor must accept keyboard input, so remove NOT_FOCUSABLE.
-  params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+  .apply {
+    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+    this.y = 100
+}
   try { wm?.addView(box,params); overlay=box } catch (_:Exception) { Toast.makeText(this,"Não foi possível abrir sobreposição",Toast.LENGTH_LONG).show() }
  }
  fun hideEditor() { overlay?.let { try { wm?.removeView(it) } catch (_:Exception) {} }; overlay=null }
